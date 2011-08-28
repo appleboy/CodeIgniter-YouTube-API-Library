@@ -120,10 +120,10 @@ class youtube
         $opts = array(self::SCHEME=>array('method'=>self::METHOD, 'header'=>$this->_build_header()));
         $context = stream_context_create($opts);
         $handle = stream_socket_client($connect.'://'.$host.':'.$port, $errno, $errstr, 10, STREAM_CLIENT_CONNECT, $context);
-        
+
         return $handle;
     }
-    
+
     /**
      * Checks that the response from the server after we make our request is good.
      * If it isn't then we log the response we got and return false.
@@ -143,7 +143,7 @@ class youtube
                 if(rtrim($line) === '')break;
             }
         }
-        
+
         $matches = explode(' ', $resparray[0]);
         $status = $gotStatus ? intval($matches[1]) : 0;
         if($status < 200 || $status > 299)
@@ -154,7 +154,7 @@ class youtube
         }
         return true;
     }
-    
+
     private function _read($handle)
     {
         if($this->_check_status($handle) !== true)return false;
@@ -164,9 +164,9 @@ class youtube
         //Convert hex chunk size to int
         if(ctype_xdigit($chunksize))$chunksize = hexdec($chunksize);
         else $chunksize = 0;
-        
+
         if(self::DEBUG)error_log("\nCHUNKSIZE: {$chunksize}");
-        
+
         while($chunksize > 0 && !$this->_timedout($handle))
         {
             $line = fgets($handle, $chunksize);
@@ -177,19 +177,19 @@ class youtube
 
             $response .= rtrim($line);
             if(self::DEBUG)error_log("\nCHUNK: {$line}");
-            
+
             $chunksize = rtrim(fgets($handle));
             //If we have a valid number for chunksize and we
             //didn't get an error while reading the last line
             if(ctype_xdigit($chunksize) && $line !== false)$chunksize = hexdec($chunksize);
             else break;
-            
+
             if(self::DEBUG)error_log("\nCHUNKSIZE: {$chunksize}");
         }
         if(self::DEBUG)error_log("\nRESPONSE: {$response}");
         return $response;
     }
-    
+
     /**
      * Writes the specified request to the file handle.
      **/
@@ -199,7 +199,7 @@ class youtube
         fwrite($handle, $request);
         return $request;
     }
-    
+
     /**
      * Checks that the specified file handle hasn't timed out.
      **/
@@ -227,9 +227,9 @@ class youtube
         $url = self::URI_BASE.substr($uri, 1);
 
         $fullrequest = $this->_build_header($url, $request, self::LINE_END);
-        
+
         if(self::DEBUG)error_log($fullrequest);
-        
+
         $handle = $this->_connect();
         $this->_write($handle, $fullrequest);
         $output = $this->_read($handle);
@@ -277,7 +277,7 @@ class youtube
     {
         return $this->_response_request("/{$this->_uris['VIDEO_URI']}/{$videoId}/responses", array_merge(array('start-index'=>1, 'max-results'=>10), $params));
     }
-    
+
     /**
      * Retrieves a feed of videos based on an array of keywords.
      *
@@ -308,7 +308,7 @@ class youtube
     {
         return $this->_response_request("/{$this->_uris['STANDARD_TOP_RATED_URI']}", array_merge(array('start-index'=>1, 'max-results'=>10), $params));
     }
-    
+
     public function getMostViewedVideoFeed(array $params = array())
     {
         return $this->_response_request("/{$this->_uris['STANDARD_MOST_VIEWED_URI']}", array_merge(array('start-index'=>1, 'max-results'=>10), $params));
@@ -396,19 +396,19 @@ class youtube
             $extra = "Content-Type: application/atom+xml; charset={$encoding}".self::LINE_END;
             $extra .= "GData-Version: 2.0".self::LINE_END;
             mb_internal_encoding($encoding);
-            
+
             $extra .= "Content-Length: ".mb_strlen($metadata.self::LINE_END).self::LINE_END.self::LINE_END;
-            
+
             $fullrequest = $this->_build_header($url, $header, $extra, 'POST');
             $fullrequest .= $metadata.self::LINE_END;
-            
+
             $handle = $this->_connect();
             $this->_write($handle, $fullrequest);
             $output = $this->_read($handle);
-            
+
             fclose($handle);
             $handle = null;
-            
+
             return $output;
         }
         return false;
@@ -438,7 +438,7 @@ class youtube
             $this->CI->load->helper('string');
             $boundry = random_string();
             $extra .= "Content-Type: multipart/related; boundary=\"{$boundry}\"".self::LINE_END;
-            
+
             //Build out the data portion of the request
             $data = "--".$boundry.self::LINE_END;
             $data .= "Content-Type: application/atom+xml; charset=UTF-8".self::LINE_END.self::LINE_END;
@@ -448,24 +448,24 @@ class youtube
             $data .= "Content-Transfer-Encoding: binary".self::LINE_END.self::LINE_END;
             $data .= file_get_contents($path).self::LINE_END;
             $data .= "--{$boundry}--".self::LINE_END;
-            
+
             //Calculate the size of the data portion.
             $extra .= "Content-Length: ".strlen($data).self::LINE_END.self::LINE_END;
             $this->_header['Host'] = $host;//Swap the default host
             $fullrequest = $this->_build_header($url, $header, $extra, 'POST');
             $this->_header['Host'] = self::HOST;//Revert the default host.
             $fullrequest .= $data;
-            
+
             $handle = null;
             //Connect to the special upload host
             $handle = $this->_connect($host);
-            
+
             $this->_write($handle, $fullrequest);
             $output = $this->_read($handle);
-            
+
             fclose($handle);
             $handle = null;
-            
+
             return $output;
         }
         return false;
@@ -485,7 +485,7 @@ class youtube
     {
         return $this->_data_request("/{$this->_uris['UPLOAD_TOKEN_REQUEST']}", $metadata);
     }
-    
+
     /**
      * Add a comment to a video or a reply to another comment.
      * To reply to a comment you must specify the commentId
@@ -498,17 +498,17 @@ class youtube
      **/
     public function addComment($videoId, $comment, $commentId = false)
     {
-        
+
             $uri = "/{$this->_uris['VIDEO_URI']}/{$videoId}/comments";
             $url = self::URI_BASE.substr($uri, 1);
-            
+
             $xml = "<?xml version='1.0' encoding='UTF-8'?><entry xmlns='http://www.w3.org/2005/Atom' xmlns:yt='http://gdata.youtube.com/schemas/2007'>";
             if($commentId !== false)$xml .= "<link rel='http://gdata.youtube.com/schemas/2007#in-reply-to' type='application/atom+xml' href='{$url}/{$commentId}'/>";
             $xml .= "<content>{$comment}</content></entry>";
-            
+
             return $this->_data_request($uri, $xml);
     }
-    
+
     /**
      * Add a video response to another video.
      *
@@ -520,10 +520,10 @@ class youtube
     {
         $uri = "/{$this->_uris['VIDEO_URI']}/{$videoId}/responses";
         $xml = "<?xml version='1.0' encoding='UTF-8'?><entry xmlns='http://www.w3.org/2005/Atom'><id>{$responseId}</id></entry>";
-        
+
         return $this->_data_request($uri, $xml);
     }
-    
+
     /**
      * Adds a numeric rating between 1 and 5 to the specified video
      *
@@ -540,7 +540,7 @@ class youtube
         }
         return false;
     }
-    
+
     /**
      * Adds a like or dislike rating to the specified video.
      *
